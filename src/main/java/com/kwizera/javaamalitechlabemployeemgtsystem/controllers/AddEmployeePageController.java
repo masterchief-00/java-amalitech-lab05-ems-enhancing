@@ -1,7 +1,9 @@
 package com.kwizera.javaamalitechlabemployeemgtsystem.controllers;
 
+import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.*;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.Employee;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImplementation;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.InputValidationUtil;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
@@ -19,7 +21,8 @@ public class AddEmployeePageController {
     SessionManager<UUID> instance = SessionManager.getInstance();
     private EmployeeDatabase<UUID> database;
     MainUtil util = new MainUtil();
-    InputValidationUtil inputValidationUtil = new InputValidationUtil();
+
+    private EmployeeManagementServicesImplementation employeeServices;
 
     @FXML
     public TextField nameInput;
@@ -55,73 +58,29 @@ public class AddEmployeePageController {
         String department = selectDepartmentInput.getValue();
         String experience = experienceInput.getText();
         String rating = ratingInput.getText();
-        boolean isValid = true;
 
-        // input validation
-        if (inputValidationUtil.invalidNames(names)) {
-            nameErrorLabel.setText("Invalid names");
+        try {
+            employeeServices.createEmployee(names, salary, department, experience, rating, submitEmployeeBtn, database, this::resetForm);
+        } catch (InvalidNameException err) {
+            nameErrorLabel.setText(err.getMessage());
             nameErrorLabel.setVisible(true);
             nameInput.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-            isValid = false;
-        } else if (inputValidationUtil.invalidSalary(salary)) {
-            salaryErrorLabel.setText("Invalid number for salary");
+        } catch (InvalidSalaryException err) {
+            salaryErrorLabel.setText(err.getMessage());
             salaryErrorLabel.setVisible(true);
             salaryInput.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-            isValid = false;
-        } else if (department == null || department.equals("None")) {
-            departmentErrorLabel.setText("Please select department");
+        } catch (InvalidDepartmentException err) {
+            departmentErrorLabel.setText("Please select a department");
             departmentErrorLabel.setVisible(true);
             selectDepartmentInput.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-            isValid = false;
-        } else if (inputValidationUtil.invalidExperienceYears(experience)) {
-            experienceErrorLabel.setText("Invalid input for years of experience");
+        } catch (InvalidExperienceYearsException err) {
+            experienceErrorLabel.setText(err.getMessage());
             experienceErrorLabel.setVisible(true);
             experienceInput.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-            isValid = false;
-        } else if (inputValidationUtil.invalidRating(rating)) {
-            ratingErrorLabel.setText("Invalid input for performance rating");
+        } catch (InvalidRatingException err) {
+            ratingErrorLabel.setText(err.getMessage());
             ratingErrorLabel.setVisible(true);
             ratingInput.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-            isValid = false;
-        } else {
-            nameErrorLabel.setVisible(false);
-            nameInput.setStyle("");
-
-            salaryErrorLabel.setVisible(false);
-            salaryInput.setStyle("");
-
-            departmentErrorLabel.setVisible(false);
-            selectDepartmentInput.setStyle("");
-
-            experienceErrorLabel.setVisible(false);
-            experienceInput.setStyle("");
-
-            ratingErrorLabel.setVisible(false);
-            ratingInput.setStyle("");
-
-        }
-
-        if (!isValid) {
-            return;
-        } else {
-            try {
-                // if valid, create employee
-                UUID uuid = UUID.randomUUID();
-                double salaryDbl = Double.parseDouble(salary);
-                int experienceInt = Integer.parseInt(experience);
-                double ratingDbl = Double.parseDouble(rating);
-                Employee<UUID> newEmployee = new Employee<>(uuid, names, department, salaryDbl, ratingDbl, experienceInt, true);
-
-                if (database.addEmployee(newEmployee)) {
-                    util.displayConfirmation("Employee added successfully");
-                    submitEmployeeBtn.setDisable(true);
-                } else {
-                    util.displayError("Employee not added, key/ID provided already exists");
-                }
-
-            } catch (RuntimeException e) {
-                util.displayError("Employee not added, something went wrong");
-            }
         }
     }
 
@@ -135,6 +94,7 @@ public class AddEmployeePageController {
     private void initialize() {
         // get employee database from session instance
         database = instance.getDatabase();
+        employeeServices = new EmployeeManagementServicesImplementation();
 
         if (database == null) {
             util.displayError("Database initialization failed, please try again later");
@@ -142,5 +102,30 @@ public class AddEmployeePageController {
         } else {
             selectDepartmentInput.getItems().addAll("Engineering", "Marketing", "Sales", "HR");
         }
+    }
+
+    private void resetForm() {
+        nameInput.clear();
+        salaryInput.clear();
+        ratingInput.clear();
+        experienceInput.clear();
+        resetErrorValidation();
+    }
+
+    private void resetErrorValidation() {
+        nameErrorLabel.setVisible(false);
+        nameInput.setStyle("");
+
+        salaryErrorLabel.setVisible(false);
+        salaryInput.setStyle("");
+
+        departmentErrorLabel.setVisible(false);
+        selectDepartmentInput.setStyle("");
+
+        experienceErrorLabel.setVisible(false);
+        experienceInput.setStyle("");
+
+        ratingErrorLabel.setVisible(false);
+        ratingInput.setStyle("");
     }
 }
