@@ -2,11 +2,10 @@ package com.kwizera.javaamalitechlabemployeemgtsystem.controllers;
 
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
 import com.kwizera.javaamalitechlabemployeemgtsystem.services.EmployeeManagementServices;
-import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImplementation;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImpl;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
 import javafx.fxml.FXML;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.AnchorPane;
 
@@ -34,7 +33,7 @@ public class ReportPageController {
             util.displayError("Database initialization failed, please try again later");
             return;
         } else {
-            employeeManagementServices = new EmployeeManagementServicesImplementation(database);
+            employeeManagementServices = new EmployeeManagementServicesImpl(database);
             // invokes method that returns report as a string
             String report = employeeManagementServices.generateReport();
 

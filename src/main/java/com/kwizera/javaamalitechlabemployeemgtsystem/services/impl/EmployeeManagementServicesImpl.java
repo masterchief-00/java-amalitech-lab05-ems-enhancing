@@ -13,12 +13,12 @@ import javafx.scene.control.Button;
 import java.util.List;
 import java.util.UUID;
 
-public class EmployeeManagementServicesImplementation implements EmployeeManagementServices {
+public class EmployeeManagementServicesImpl implements EmployeeManagementServices {
     private final InputValidationUtil inputValidationUtil = new InputValidationUtil();
     private final MainUtil util = new MainUtil();
     private final EmployeeDatabase<UUID> database;
 
-    public EmployeeManagementServicesImplementation(EmployeeDatabase<UUID> database) {
+    public EmployeeManagementServicesImpl(EmployeeDatabase<UUID> database) {
         this.database = database;
     }
 
@@ -57,7 +57,6 @@ public class EmployeeManagementServicesImplementation implements EmployeeManagem
             }
 
         } catch (RuntimeException e) {
-            System.out.println(e);
             util.displayError("Employee not added, something went wrong");
         }
     }

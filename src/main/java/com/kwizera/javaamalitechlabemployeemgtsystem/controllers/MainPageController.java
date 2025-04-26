@@ -4,7 +4,7 @@ import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.*;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.Employee;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
 import com.kwizera.javaamalitechlabemployeemgtsystem.services.EmployeeManagementServices;
-import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImplementation;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImpl;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.InputValidationUtil;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
@@ -22,8 +22,6 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
-import javafx.util.converter.DoubleStringConverter;
-import javafx.util.converter.IntegerStringConverter;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -172,7 +170,7 @@ public class MainPageController {
             util.displayError("Database initialization failed, please try again later");
             return;
         } else {
-            employeeManagementServices = new EmployeeManagementServicesImplementation(database);
+            employeeManagementServices = new EmployeeManagementServicesImpl(database);
             tableData = employeeManagementServices.retrieveAllEmployees(); // loads and initializes the table with all employees
             setUpTableColumns();
             loadInitialTableData();

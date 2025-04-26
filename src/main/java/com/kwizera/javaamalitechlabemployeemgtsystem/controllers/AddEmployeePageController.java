@@ -1,12 +1,10 @@
 package com.kwizera.javaamalitechlabemployeemgtsystem.controllers;
 
 import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.*;
-import com.kwizera.javaamalitechlabemployeemgtsystem.models.Employee;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
 import com.kwizera.javaamalitechlabemployeemgtsystem.services.EmployeeManagementServices;
-import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImplementation;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImpl;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
-import com.kwizera.javaamalitechlabemployeemgtsystem.utils.InputValidationUtil;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -98,7 +96,7 @@ public class AddEmployeePageController {
     private void initialize() {
         // get employee database from session instance
         database = instance.getDatabase();
-        employeeServices = new EmployeeManagementServicesImplementation(database);
+        employeeServices = new EmployeeManagementServicesImpl(database);
 
         if (database == null) {
             util.displayError("Database initialization failed, please try again later");
