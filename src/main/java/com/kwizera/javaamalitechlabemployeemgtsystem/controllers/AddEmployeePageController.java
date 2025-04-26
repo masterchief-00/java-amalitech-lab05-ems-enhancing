@@ -63,6 +63,7 @@ public class AddEmployeePageController {
         String rating = ratingInput.getText();
 
         try {
+            resetErrorValidation();
             employeeServices.createEmployee(names, salary, department, experience, rating, submitEmployeeBtn, this::resetForm);
         } catch (InvalidNameException err) {
             nameErrorLabel.setText(err.getMessage());
@@ -112,6 +113,7 @@ public class AddEmployeePageController {
         salaryInput.clear();
         ratingInput.clear();
         experienceInput.clear();
+        submitEmployeeBtn.setDisable(false);
         resetErrorValidation();
     }
 
