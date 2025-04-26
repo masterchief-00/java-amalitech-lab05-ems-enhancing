@@ -43,7 +43,7 @@ public class InputValidationUtil {
 
             double rateDbl = Double.parseDouble(rate);
             boolean regexMatch = rate.matches("\\d+(\\.\\d+)?");
-            boolean notOutOfRange = rateDbl >= 0 && rateDbl <= 5;
+            boolean notOutOfRange = rateDbl >= 1 && rateDbl <= 5;
 
             return !regexMatch || !notOutOfRange;
         } catch (NumberFormatException e) {

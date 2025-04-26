@@ -1,5 +1,9 @@
 package com.kwizera.javaamalitechlabemployeemgtsystem.utils;
 
+import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.InvalidDepartmentException;
+import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.InvalidRatingException;
+import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.MinGreaterThanMaxException;
+import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.ValuesBelowZeroException;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -18,6 +22,7 @@ import java.util.Optional;
 
 // contains methods to spawn dialog boxes and switch between screens
 public class MainUtil {
+    InputValidationUtil inputValidationUtil = new InputValidationUtil();
 
     // displays a modular window
     public void displayModularScene(String fxmlFile, Button sourceButton, String title) throws IOException {
@@ -88,14 +93,19 @@ public class MainUtil {
         ChangeListener<String> validationListener = (observable, oldValue, newValue) -> {
             String departmentText = departmentSelectInput.getValue();
 
-            if (departmentText.equals("None")) {
+            try {
+                if (departmentText == null || departmentText.equals("None")) {
+                    throw new InvalidDepartmentException("Please select a department", departmentText);
+                }
+                departmentAvgSalaryErrorLabel.setText("");
+                departmentAvgButtonType.setDisable(false);
+
+            } catch (InvalidDepartmentException e) {
                 departmentAvgSalaryErrorLabel.setText("Please select a department");
                 departmentAvgSalaryErrorLabel.setVisible(true);
                 departmentAvgButtonType.setDisable(true);
-            } else {
-                departmentAvgSalaryErrorLabel.setText("");
-                departmentAvgButtonType.setDisable(false);
             }
+
         };
 
         departmentSelectInput.valueProperty().addListener(validationListener);
@@ -118,7 +128,7 @@ public class MainUtil {
         Label topEarnersErrorLabel = new Label("Invalid input, please input valid numbers");
         topEarnersErrorLabel.setStyle("-fx-text-fill: red;");
         topEarnersErrorLabel.setWrapText(true);
-        topEarnersErrorLabel.setMinSize(100, 20);
+        topEarnersErrorLabel.setMinSize(100, 50);
         topEarnersErrorLabel.setVisible(false);
 
         // buttons
@@ -150,22 +160,22 @@ public class MainUtil {
             try {
                 double minRating = Double.parseDouble(minRatingText);
 
-                if (minRating < 0) {
-                    topEarnersErrorLabel.setText("Please input a number above zero");
-                    topEarnersErrorLabel.setVisible(true);
-                    topEarnerButton.setDisable(true);
-                } else {
-                    topEarnersErrorLabel.setText("");
-                    topEarnerButton.setDisable(false);
-                }
+                if (inputValidationUtil.invalidRating(minRatingText))
+                    throw new InvalidRatingException("Invalid input for performance rating. ", String.valueOf(minRating));
+
+                topEarnersErrorLabel.setText("");
+                topEarnerButton.setDisable(false);
             } catch (NumberFormatException e) {
                 if (!minRatingText.isEmpty()) {
-                    topEarnersErrorLabel.setText("Invalid numbers");
+                    topEarnersErrorLabel.setText("Invalid input, please input a value in range of 1 to 5.");
                     topEarnersErrorLabel.setVisible(true);
                 } else {
                     topEarnersErrorLabel.setText("");
                 }
-
+                topEarnerButton.setDisable(true);
+            } catch (InvalidRatingException e) {
+                topEarnersErrorLabel.setText(e.getMessage() + e.getInvalidInput() + " is not a value in range of 1 to 5.");
+                topEarnersErrorLabel.setVisible(true);
                 topEarnerButton.setDisable(true);
             }
         };
@@ -210,7 +220,7 @@ public class MainUtil {
         Label salaryRaiseErrorLabel = new Label("Invalid input, please input valid numbers");
         salaryRaiseErrorLabel.setStyle("-fx-text-fill: red;");
         salaryRaiseErrorLabel.setWrapText(true);
-        salaryRaiseErrorLabel.setMinSize(100, 20);
+        salaryRaiseErrorLabel.setMinSize(100, 50);
         salaryRaiseErrorLabel.setVisible(false);
 
         salaryRaiseDialogGrid.add(new Label("Threshold score:"), 0, 0);
@@ -233,18 +243,13 @@ public class MainUtil {
                 double score = Double.parseDouble(minScore);
                 double increaseBy = Double.parseDouble(rate);
 
-                if (score < 0 || increaseBy < 0) {
-                    salaryRaiseErrorLabel.setText("Negative numbers are not allowed");
-                    salaryRaiseErrorLabel.setVisible(true);
-                    salaryRaiseConfirmButton.setDisable(true);
-                } else if (score > increaseBy) {
-                    salaryRaiseErrorLabel.setText("Minimum salary must be less than maximum salary");
-                    salaryRaiseErrorLabel.setVisible(true);
-                    salaryRaiseConfirmButton.setDisable(true);
-                } else {
-                    salaryRaiseErrorLabel.setText("");
-                    salaryRaiseConfirmButton.setDisable(false);
-                }
+                if (inputValidationUtil.invalidRating(String.valueOf(score)))
+                    throw new InvalidRatingException("Invalid input for performance rating. ", String.valueOf(score));
+
+                if (score < 0 || increaseBy < 0) throw new ValuesBelowZeroException("Negative numbers are not allowed");
+
+                salaryRaiseErrorLabel.setText("");
+                salaryRaiseConfirmButton.setDisable(false);
             } catch (NumberFormatException e) {
                 if (!minScore.isEmpty() && !rate.isEmpty()) {
                     salaryRaiseErrorLabel.setText("Invalid numbers");
@@ -253,6 +258,14 @@ public class MainUtil {
                     salaryRaiseErrorLabel.setText("");
                 }
 
+                salaryRaiseConfirmButton.setDisable(true);
+            } catch (ValuesBelowZeroException e) {
+                salaryRaiseErrorLabel.setText(e.getMessage());
+                salaryRaiseErrorLabel.setVisible(true);
+                salaryRaiseConfirmButton.setDisable(true);
+            } catch (InvalidRatingException e) {
+                salaryRaiseErrorLabel.setText(e.getMessage() + e.getInvalidInput() + " is not a value in range of 1 to 5.");
+                salaryRaiseErrorLabel.setVisible(true);
                 salaryRaiseConfirmButton.setDisable(true);
             }
         };
@@ -315,14 +328,18 @@ public class MainUtil {
         ChangeListener<String> validationListener = (observable, oldValue, newValue) -> {
             String departmentText = departmentSelectInput.getValue();
 
-            if (departmentText.equals("None")) {
+            try {
+                if (departmentText == null || departmentText.equals("None"))
+                    throw new InvalidDepartmentException("Please select a department", departmentText);
+
+                departmentFilterErrorLabel.setText("");
+                departmentFilterButtonType.setDisable(false);
+            } catch (InvalidDepartmentException e) {
                 departmentFilterErrorLabel.setText("Please select a department");
                 departmentFilterErrorLabel.setVisible(true);
                 departmentFilterButtonType.setDisable(true);
-            } else {
-                departmentFilterErrorLabel.setText("");
-                departmentFilterButtonType.setDisable(false);
             }
+
         };
 
         departmentSelectInput.valueProperty().addListener(validationListener);
@@ -345,7 +362,7 @@ public class MainUtil {
         Label ratingErrorLabel = new Label("Invalid input, please input valid numbers");
         ratingErrorLabel.setStyle("-fx-text-fill: red;");
         ratingErrorLabel.setWrapText(true);
-        ratingErrorLabel.setMinSize(100, 20);
+        ratingErrorLabel.setMinSize(100, 50);
         ratingErrorLabel.setVisible(false);
 
         // buttons
@@ -377,14 +394,11 @@ public class MainUtil {
             try {
                 double minRating = Double.parseDouble(minRatingText);
 
-                if (minRating < 0 || minRating > 5) {
-                    ratingErrorLabel.setText("Please input a number in range of 0 to 5");
-                    ratingErrorLabel.setVisible(true);
-                    ratingFilterButton.setDisable(true);
-                } else {
-                    ratingErrorLabel.setText("");
-                    ratingFilterButton.setDisable(false);
-                }
+                if (inputValidationUtil.invalidRating(minRatingText))
+                    throw new InvalidRatingException("Invalid input for performance rating. ", String.valueOf(minRating));
+
+                ratingErrorLabel.setText("");
+                ratingFilterButton.setDisable(false);
             } catch (NumberFormatException e) {
                 if (!minRatingText.isEmpty()) {
                     ratingErrorLabel.setText("Invalid numbers");
@@ -393,6 +407,10 @@ public class MainUtil {
                     ratingErrorLabel.setText("");
                 }
 
+                ratingFilterButton.setDisable(true);
+            } catch (InvalidRatingException e) {
+                ratingErrorLabel.setText(e.getMessage() + e.getInvalidInput() + " is not a value in range of 1 to 5.");
+                ratingErrorLabel.setVisible(true);
                 ratingFilterButton.setDisable(true);
             }
         };
@@ -461,13 +479,9 @@ public class MainUtil {
                 double max = Double.parseDouble(maxText);
 
                 if (min < 0 || max < 0) {
-                    salaryRangeErrorLabel.setText("Negative numbers are not allowed");
-                    salaryRangeErrorLabel.setVisible(true);
-                    salaryFilterButton.setDisable(true);
+                    throw new ValuesBelowZeroException("Negative numbers are not allowed");
                 } else if (min > max) {
-                    salaryRangeErrorLabel.setText("Minimum salary must be less than maximum salary");
-                    salaryRangeErrorLabel.setVisible(true);
-                    salaryFilterButton.setDisable(true);
+                    throw new MinGreaterThanMaxException("Minimum salary must be less than maximum salary");
                 } else {
                     salaryRangeErrorLabel.setText("");
                     salaryFilterButton.setDisable(false);
@@ -480,6 +494,14 @@ public class MainUtil {
                     salaryRangeErrorLabel.setText("");
                 }
 
+                salaryFilterButton.setDisable(true);
+            } catch (ValuesBelowZeroException e) {
+                salaryRangeErrorLabel.setText("Negative numbers are not allowed");
+                salaryRangeErrorLabel.setVisible(true);
+                salaryFilterButton.setDisable(true);
+            } catch (MinGreaterThanMaxException e) {
+                salaryRangeErrorLabel.setText("Minimum salary must be less than maximum salary");
+                salaryRangeErrorLabel.setVisible(true);
                 salaryFilterButton.setDisable(true);
             }
         };

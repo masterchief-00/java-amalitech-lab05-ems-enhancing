@@ -7,16 +7,23 @@ import com.kwizera.javaamalitechlabemployeemgtsystem.services.EmployeeManagement
 import com.kwizera.javaamalitechlabemployeemgtsystem.services.SuccessCallBack;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.InputValidationUtil;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 
+import java.util.List;
 import java.util.UUID;
 
 public class EmployeeManagementServicesImplementation implements EmployeeManagementServices {
-    InputValidationUtil inputValidationUtil = new InputValidationUtil();
-    MainUtil util = new MainUtil();
+    private final InputValidationUtil inputValidationUtil = new InputValidationUtil();
+    private final MainUtil util = new MainUtil();
+    private final EmployeeDatabase<UUID> database;
+
+    public EmployeeManagementServicesImplementation(EmployeeDatabase<UUID> database) {
+        this.database = database;
+    }
 
     @Override
-    public void createEmployee(String names, String salary, String department, String experience, String rating, Button confirmBtn, EmployeeDatabase<UUID> database, SuccessCallBack onSuccess) throws InvalidNameException, InvalidSalaryException, InvalidDepartmentException, InvalidRatingException, InvalidExperienceYearsException {
+    public void createEmployee(String names, String salary, String department, String experience, String rating, Button confirmBtn, SuccessCallBack onSuccess) throws InvalidNameException, InvalidSalaryException, InvalidDepartmentException, InvalidRatingException, InvalidExperienceYearsException {
         if (inputValidationUtil.invalidNames(names)) {
             throw new InvalidNameException("Invalid names", names);
         }
@@ -53,5 +60,81 @@ public class EmployeeManagementServicesImplementation implements EmployeeManagem
             System.out.println(e);
             util.displayError("Employee not added, something went wrong");
         }
+    }
+
+    @Override
+    public double departAverageSalary(String dept) {
+        return database.calculateAverageSalaryByDepartment(dept);
+    }
+
+    @Override
+    public List<Employee<UUID>> topEarningEmployees(int N) {
+        return database.getTopEarners(N);
+    }
+
+    @Override
+    public long giveRaiseToTopPerformers(double minScore, double increaseRate) {
+        return database.giveRaiseToTopPerformers(minScore, increaseRate);
+    }
+
+    @Override
+    public List<Employee<UUID>> employeesOfSalaryRange(double minSalary, double maxSalary) {
+        return database.getEmployeeBySalaryRange(minSalary, maxSalary);
+    }
+
+    @Override
+    public List<Employee<UUID>> employeesOfSearchTerm(String searchTerm) {
+        return database.getEmployeeBySearchTerm(searchTerm);
+    }
+
+    @Override
+    public List<Employee<UUID>> employeesSortedByExperience() {
+        return database.sortByExperience();
+    }
+
+    @Override
+    public List<Employee<UUID>> employeesSortedBySalary() {
+        return database.sortBySalary();
+    }
+
+    @Override
+    public List<Employee<UUID>> employeesSortedByPerformance() {
+        return database.sortByPerformance();
+    }
+
+    @Override
+    public List<Employee<UUID>> employeesFilteredByRating(double minRating) {
+        return database.getEmployeeByPerformanceRating(minRating);
+    }
+
+    @Override
+    public List<Employee<UUID>> employeesFilteredByDepartment(String department) {
+        return database.getEmployeesByDepartment(department);
+    }
+
+    @Override
+    public String generateReport() {
+        return database.getReport();
+    }
+
+    @Override
+    public boolean deleteEmployee(UUID employeeId) {
+        return database.removeEmployee(employeeId);
+    }
+
+    @Override
+    public boolean updateEmployee(String field, Employee<UUID> emp) {
+        return database.updateEmployeeDetails(emp.getEmployeeId(), "name", emp);
+    }
+
+    @Override
+    public ObservableList<Employee<UUID>> retrieveAllEmployees() {
+        return database.getAllEmployees();
+    }
+
+    @Override
+    public void resetDb() throws NullEmployeeDbException {
+        if (database == null) throw new NullEmployeeDbException("Invalid database reference");
+        database.reset();
     }
 }

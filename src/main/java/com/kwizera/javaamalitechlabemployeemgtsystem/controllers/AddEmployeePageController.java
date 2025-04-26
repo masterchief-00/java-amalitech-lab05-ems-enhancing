@@ -3,6 +3,7 @@ package com.kwizera.javaamalitechlabemployeemgtsystem.controllers;
 import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.*;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.Employee;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.EmployeeManagementServices;
 import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImplementation;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.InputValidationUtil;
@@ -22,7 +23,9 @@ public class AddEmployeePageController {
     private EmployeeDatabase<UUID> database;
     MainUtil util = new MainUtil();
 
-    private EmployeeManagementServicesImplementation employeeServices;
+    private EmployeeManagementServices employeeServices;
+
+//    private EmployeeManagementServicesImplementation employeeServices;
 
     @FXML
     public TextField nameInput;
@@ -60,7 +63,7 @@ public class AddEmployeePageController {
         String rating = ratingInput.getText();
 
         try {
-            employeeServices.createEmployee(names, salary, department, experience, rating, submitEmployeeBtn, database, this::resetForm);
+            employeeServices.createEmployee(names, salary, department, experience, rating, submitEmployeeBtn, this::resetForm);
         } catch (InvalidNameException err) {
             nameErrorLabel.setText(err.getMessage());
             nameErrorLabel.setVisible(true);
@@ -94,7 +97,7 @@ public class AddEmployeePageController {
     private void initialize() {
         // get employee database from session instance
         database = instance.getDatabase();
-        employeeServices = new EmployeeManagementServicesImplementation();
+        employeeServices = new EmployeeManagementServicesImplementation(database);
 
         if (database == null) {
             util.displayError("Database initialization failed, please try again later");

@@ -1,7 +1,10 @@
 package com.kwizera.javaamalitechlabemployeemgtsystem.controllers;
 
+import com.kwizera.javaamalitechlabemployeemgtsystem.exceptions.*;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.Employee;
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.EmployeeManagementServices;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImplementation;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.InputValidationUtil;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
@@ -34,6 +37,7 @@ public class MainPageController {
     private EmployeeDatabase<UUID> database;
     MainUtil util = new MainUtil();
     InputValidationUtil inputValidationUtil = new InputValidationUtil();
+    private EmployeeManagementServices employeeManagementServices;
 
     DecimalFormat formatter = new DecimalFormat("#,###.00");
 
@@ -96,7 +100,11 @@ public class MainPageController {
     @FXML
     private void onResetClicked() {
         // resets the table view component to default all employees display
-        database.reset();
+        try {
+            employeeManagementServices.resetDb();
+        } catch (NullEmployeeDbException e) {
+            util.displayError("Could not reset table. " + e.getMessage());
+        }
     }
 
     @FXML
@@ -111,7 +119,7 @@ public class MainPageController {
         Optional<String> result = util.departmentAvgSalaryDialogBox();
         result.ifPresent(dept -> {
             // if the department was provided, use is to calculate average
-            double avg = database.calculateAverageSalaryByDepartment(dept);
+            double avg = employeeManagementServices.departAverageSalary(dept);
             util.displayConfirmation("The average for the " + dept + " department is " + formatter.format(avg) + " RWF.");
         });
     }
@@ -123,7 +131,7 @@ public class MainPageController {
 
         result.ifPresent(N -> {
             // if input provided invokes the method from the database instance
-            List<Employee<UUID>> list = database.getTopEarners(N);
+            List<Employee<UUID>> list = employeeManagementServices.topEarningEmployees(N);
 
             // updates the table view
             tableData.clear();
@@ -142,7 +150,7 @@ public class MainPageController {
             double increaseScore = pair.getValue();
 
             // if the operations is successful, the method returns the number of records affected
-            long updatedCount = database.giveRaiseToTopPerformers(minScore, increaseScore);
+            long updatedCount = employeeManagementServices.giveRaiseToTopPerformers(minScore, increaseScore);
 
             // confirmation pop up
             util.displayConfirmation("Salary for " + updatedCount + " employees updated");
@@ -164,7 +172,8 @@ public class MainPageController {
             util.displayError("Database initialization failed, please try again later");
             return;
         } else {
-            tableData = database.getAllEmployees(); // loads and initializes the table with all employees
+            employeeManagementServices = new EmployeeManagementServicesImplementation(database);
+            tableData = employeeManagementServices.retrieveAllEmployees(); // loads and initializes the table with all employees
             setUpTableColumns();
             loadInitialTableData();
             setUpListeners();
@@ -195,6 +204,13 @@ public class MainPageController {
 
     // adds listeners to some inputs to track user interactions
     private void setUpListeners() {
+        // display employee details by selecting from table
+        employeeTable.getSelectionModel().selectedItemProperty().addListener(((obs, oldSelection, selected) -> {
+            if (selected != null) {
+                updateEmployeeDetailsPane();
+            }
+        }));
+
         // define actions on filter selections
         filterCombo.setOnAction(event -> {
             String selectedFilter = filterCombo.getValue();
@@ -208,7 +224,7 @@ public class MainPageController {
                         double min = range.getKey();
                         double max = range.getValue();
 
-                        List<Employee<UUID>> list = database.getEmployeeBySalaryRange(min, max);
+                        List<Employee<UUID>> list = employeeManagementServices.employeesOfSalaryRange(min, max);
                         tableData.clear();
                         tableData.addAll(list);
                     });
@@ -219,7 +235,7 @@ public class MainPageController {
                     ratingDialogBoxResult.ifPresent(rating -> {
                         double minRating = rating;
 
-                        List<Employee<UUID>> list = database.getEmployeeByPerformanceRating(minRating);
+                        List<Employee<UUID>> list = employeeManagementServices.employeesFilteredByRating(minRating);
                         tableData.clear();
                         tableData.addAll(list);
                     });
@@ -228,7 +244,7 @@ public class MainPageController {
                     Optional<String> deptDialogResult = util.departmentFilterDialogBox();
 
                     deptDialogResult.ifPresent(department -> {
-                        List<Employee<UUID>> list = database.getEmployeesByDepartment(department);
+                        List<Employee<UUID>> list = employeeManagementServices.employeesFilteredByDepartment(department);
                         tableData.clear();
                         tableData.addAll(list);
                     });
@@ -238,16 +254,9 @@ public class MainPageController {
             }
         });
 
-        // display employee details by selecting from table
-        employeeTable.getSelectionModel().selectedItemProperty().addListener(((obs, oldSelection, selected) -> {
-            if (selected != null) {
-                updateEmployeeDetailsPane();
-            }
-        }));
-
         // real time searching employee by name
         searchInput.textProperty().addListener((observable, oldValue, newValue) -> {
-            List<Employee<UUID>> result = database.getEmployeeBySearchTerm(newValue);
+            List<Employee<UUID>> result = employeeManagementServices.employeesOfSearchTerm(newValue);
 
             tableData.clear();
             tableData.addAll(result);
@@ -261,17 +270,17 @@ public class MainPageController {
 
             switch (selectedSort) {
                 case "Experience":
-                    List<Employee<UUID>> byExperienceList = database.sortByExperience();
+                    List<Employee<UUID>> byExperienceList = employeeManagementServices.employeesSortedByExperience();
                     tableData.clear();
                     tableData.addAll(byExperienceList.reversed());
                     break;
                 case "Salary":
-                    List<Employee<UUID>> bySalaryList = database.sortBySalary();
+                    List<Employee<UUID>> bySalaryList = employeeManagementServices.employeesSortedBySalary();
                     tableData.clear();
                     tableData.addAll(bySalaryList.reversed());
                     break;
                 case "Performance":
-                    List<Employee<UUID>> byPerformanceList = database.sortByPerformance();
+                    List<Employee<UUID>> byPerformanceList = employeeManagementServices.employeesSortedByPerformance();
                     tableData.clear();
                     tableData.addAll(byPerformanceList.reversed());
                     break;
@@ -326,17 +335,21 @@ public class MainPageController {
         nameCol.setOnEditCommit(event -> {
             Employee<UUID> emp = event.getRowValue();
             String newName = event.getNewValue();
-            if (!inputValidationUtil.invalidNames(newName)) {
+
+            try {
+                if (inputValidationUtil.invalidNames(newName))
+                    throw new InvalidNameException("Error: Invalid names", newName);
+
                 emp.setName(newName);
-                if (database.updateEmployeeDetails(emp.getEmployeeId(), "name", emp)) {
+                if (employeeManagementServices.updateEmployee("name", emp)) {
                     util.displayConfirmation("Employee data updated successfully");
                     updateEmployeeDetailsPane();
                 } else {
                     util.displayError("Error: employee not updated");
                     emp.setName(event.getOldValue());
                 }
-            } else {
-                util.displayError("Error: Invalid names");
+            } catch (InvalidNameException e) {
+                util.displayError(e.getMessage());
                 emp.setName(event.getOldValue());
             }
         });
@@ -345,23 +358,20 @@ public class MainPageController {
             Employee<UUID> emp = event.getRowValue();
             Double newSalary = event.getNewValue();
 
-            if (newSalary == null) {
-                util.displayError("Error: Invalid value. Employee not updated");
-                emp.setSalary(event.getOldValue());
-                return;
-            }
+            try {
+                if (newSalary == null || inputValidationUtil.invalidSalary(String.valueOf(newSalary)))
+                    throw new InvalidSalaryException("Error: Invalid value. Employee not updated", String.valueOf(newSalary));
 
-            if (!inputValidationUtil.invalidSalary(String.valueOf(newSalary))) {
                 emp.setSalary(newSalary);
-                if (database.updateEmployeeDetails(emp.getEmployeeId(), "salary", emp)) {
+                if (employeeManagementServices.updateEmployee("salary", emp)) {
                     util.displayConfirmation("Employee data updated successfully");
                     updateEmployeeDetailsPane();
                 } else {
                     util.displayError("Error: employee not updated");
                     emp.setSalary(event.getOldValue());
                 }
-            } else {
-                util.displayError("Error: Invalid value. Employee not updated");
+            } catch (InvalidSalaryException e) {
+                util.displayError(e.getMessage());
                 emp.setSalary(event.getOldValue());
             }
         });
@@ -369,17 +379,21 @@ public class MainPageController {
         departmentCol.setOnEditCommit(event -> {
             Employee<UUID> emp = event.getRowValue();
             String newDpt = event.getNewValue();
-            if (newDpt != null || !newDpt.equals("None")) {
+
+            try {
+                if (newDpt == null || newDpt.equals("None"))
+                    throw new InvalidDepartmentException("Error: Invalid department. Employee not updated", newDpt);
+
                 emp.setDepartment(newDpt);
-                if (database.updateEmployeeDetails(emp.getEmployeeId(), "department", emp)) {
+                if (employeeManagementServices.updateEmployee("department", emp)) {
                     util.displayConfirmation("Employee data updated successfully");
                     updateEmployeeDetailsPane();
                 } else {
                     util.displayError("Error: employee not updated");
                     emp.setDepartment(event.getOldValue());
                 }
-            } else {
-                util.displayError("Error: Invalid department. Employee not updated");
+            } catch (InvalidDepartmentException e) {
+                util.displayError(e.getMessage());
                 emp.setDepartment(event.getOldValue());
             }
         });
@@ -389,23 +403,20 @@ public class MainPageController {
 
             Double newRating = event.getNewValue();
 
-            if (newRating == null) {
-                util.displayError("Error: Invalid rating. Employee not updated");
-                emp.setPerformanceRating(event.getOldValue());
-                return;
-            }
+            try {
+                if (newRating == null || inputValidationUtil.invalidRating(String.valueOf(newRating)))
+                    throw new InvalidRatingException("Error: Invalid rating. Employee not updated", String.valueOf(newRating));
 
-            if (!inputValidationUtil.invalidRating(String.valueOf(newRating))) {
                 emp.setPerformanceRating(newRating);
-                if (database.updateEmployeeDetails(emp.getEmployeeId(), "performanceRating", emp)) {
+                if (employeeManagementServices.updateEmployee("performanceRating", emp)) {
                     util.displayConfirmation("Employee data updated successfully");
                     updateEmployeeDetailsPane();
                 } else {
                     util.displayError("Error: employee not updated");
                     emp.setPerformanceRating(event.getOldValue());
                 }
-            } else {
-                util.displayError("Error: Invalid rating. Employee not updated");
+            } catch (InvalidRatingException e) {
+                util.displayError(e.getMessage());
                 emp.setPerformanceRating(event.getOldValue());
             }
         });
@@ -415,26 +426,21 @@ public class MainPageController {
 
             Integer newExp = event.getNewValue();
 
-            if (newExp == null) {
-                util.displayError("Error: Invalid input. Employee not updated");
-                emp.setYearsOfExperience(event.getOldValue());
-                return;
-            }
-
-            if (!inputValidationUtil.invalidExperienceYears(String.valueOf(newExp))) {
+            try {
+                if (newExp == null || inputValidationUtil.invalidExperienceYears(String.valueOf(newExp)))
+                    throw new InvalidExperienceYearsException("Error: Invalid input. Employee not updated", String.valueOf(newExp));
                 emp.setYearsOfExperience(newExp);
-                if (database.updateEmployeeDetails(emp.getEmployeeId(), "yearsOfExperience", emp)) {
+                if (employeeManagementServices.updateEmployee("yearsOfExperience", emp)) {
                     util.displayConfirmation("Employee data updated successfully");
                     updateEmployeeDetailsPane();
                 } else {
                     util.displayError("Error: employee not updated");
                     emp.setYearsOfExperience(event.getOldValue());
                 }
-            } else {
+            } catch (InvalidExperienceYearsException e) {
                 util.displayError("Error: Invalid input. Employee not updated");
                 emp.setYearsOfExperience(event.getOldValue());
             }
-
         });
 
         statusCol.setCellValueFactory(cellData -> {
@@ -499,7 +505,7 @@ public class MainPageController {
             alert.showAndWait().ifPresent(response -> {
 
                 if (response == ButtonType.YES) {
-                    if (database.removeEmployee(selectedEmployee.getEmployeeId())) {
+                    if (employeeManagementServices.deleteEmployee(selectedEmployee.getEmployeeId())) {
                         util.displayConfirmation("Employee deleted");
                         selectNext(removedIndex);
                         removeEmployeeBtn.setDisable(true);
