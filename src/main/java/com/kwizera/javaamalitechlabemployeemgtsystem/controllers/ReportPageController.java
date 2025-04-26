@@ -1,6 +1,8 @@
 package com.kwizera.javaamalitechlabemployeemgtsystem.controllers;
 
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.EmployeeManagementServices;
+import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImplementation;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
 import javafx.fxml.FXML;
@@ -14,6 +16,7 @@ public class ReportPageController {
 
     SessionManager<UUID> instance = SessionManager.getInstance();
     private EmployeeDatabase<UUID> database;
+    private EmployeeManagementServices employeeManagementServices;
     MainUtil util = new MainUtil();
 
     @FXML
@@ -31,8 +34,9 @@ public class ReportPageController {
             util.displayError("Database initialization failed, please try again later");
             return;
         } else {
+            employeeManagementServices = new EmployeeManagementServicesImplementation(database);
             // invokes method that returns report as a string
-            String report = database.getReport();
+            String report = employeeManagementServices.generateReport();
 
             // populates text area component with the report
             reportTextArea.textProperty().setValue(report);
