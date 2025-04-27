@@ -1,4 +1,12 @@
-# LAB: Employee Management System
+# LAB: Employee Management System [Enhanced]
+
+## Enhancements
+- Added custom exceptions
+- Added tests
+- Added an interface to enforce a `database layer > Service layer > controller > UI` kind of data flow.
+- Added a custom logger
+- Added some changes to the UI
+
 ## Overview
 A simple employee management system built using JavaFX and core Java using key OOP concepts and Java collection framework and generics. The project reinforces the use of Lists, Maps, Generics, Iterators, Comparators, Comparable, and Streams while efficiently handling employee records.
 
@@ -37,6 +45,3 @@ All features are implemented to be accessed via console(some of them) and GUI de
 - Maven adds dependencies automatically
 - Run the `Main` class
 - 👍
-
-## Video explaining the implementation
-https://screenrec.com/share/iqMZF3k7cW
