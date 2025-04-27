@@ -2,6 +2,7 @@ package com.kwizera.javaamalitechlabemployeemgtsystem.controllers;
 
 import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
+import com.kwizera.javaamalitechlabemployeemgtsystem.utils.CustomLogger;
 import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -37,5 +38,7 @@ public class LandingPageController {
         // adds the employee database to the application context for global accessibility
         SessionManager<UUID> session = SessionManager.getInstance();
         session.setDatabase(db);
+
+        CustomLogger.log(CustomLogger.LogLevel.INFO, "Landing page: Session initiated, Database loaded.");
     }
 }
