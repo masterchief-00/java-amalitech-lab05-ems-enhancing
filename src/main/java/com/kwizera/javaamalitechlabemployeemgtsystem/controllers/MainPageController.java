@@ -6,10 +6,7 @@ import com.kwizera.javaamalitechlabemployeemgtsystem.models.EmployeeDatabase;
 import com.kwizera.javaamalitechlabemployeemgtsystem.services.EmployeeManagementServices;
 import com.kwizera.javaamalitechlabemployeemgtsystem.services.impl.EmployeeManagementServicesImpl;
 import com.kwizera.javaamalitechlabemployeemgtsystem.session.SessionManager;
-import com.kwizera.javaamalitechlabemployeemgtsystem.utils.InputValidationUtil;
-import com.kwizera.javaamalitechlabemployeemgtsystem.utils.MainUtil;
-import com.kwizera.javaamalitechlabemployeemgtsystem.utils.SafeDoubleStringConverterUtil;
-import com.kwizera.javaamalitechlabemployeemgtsystem.utils.SafeIntegerStringConverterUtil;
+import com.kwizera.javaamalitechlabemployeemgtsystem.utils.*;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -167,9 +164,11 @@ public class MainPageController {
         database = instance.getDatabase();
 
         if (database == null) {
+            CustomLogger.log(CustomLogger.LogLevel.ERROR, "Main screen: Database initialization failed.");
             util.displayError("Database initialization failed, please try again later");
             return;
         } else {
+            CustomLogger.log(CustomLogger.LogLevel.INFO, "Main screen: Database loaded.");
             employeeManagementServices = new EmployeeManagementServicesImpl(database);
             tableData = employeeManagementServices.retrieveAllEmployees(); // loads and initializes the table with all employees
             setUpTableColumns();
